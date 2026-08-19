@@ -1,114 +1,80 @@
+def read_document(path):
+    """Read a text file and return its contents as one string."""
+    with open(path, "r", encoding="utf-8") as f:    # open it, auto-close after
+        return f.read()                             # hand the whole text back
+
+
+def filter_lines(text, min_length=15):
+    """Split text into lines, drop blanks and short ones."""
+    kept = []                                       # empty box to collect into
+
+    for line in text.splitlines():                  # splitlines = one item per line
+        clean = line.strip()                        # kill leading/trailing spaces
+
+        if clean == "":                             # blank line?
+            continue                                # skip it, go to next line
+
+        if len(clean) < min_length:                 # too short to be useful?
+            continue                                # skip it too
+
+        kept.append(clean)                          # survived both checks — keep it
+
+    return kept                                     # hand back the surviving lines
+
+
+def label_line(line):
+    """Decide what kind of line this is. Returns one word."""
+    lower = line.lower()                            # compare in lowercase so case doesn't matter
+
+    if "error" in lower or "fail" in lower:
+        return "PROBLEM"                            # returns exit the function right here
+    if "queue" in lower or "worker" in lower:
+        return "QUEUE"
+    if line.endswith(":"):
+        return "HEADING"
+
+    return "TEXT"                                   # nothing matched — the fallback
+
+
+def build_records(lines, source):
+    """Turn plain lines into a list of dictionaries with metadata."""
+    records = []
+
+    for i, line in enumerate(lines):                # i = position number, line = the text
+        record = {                                  # one dict per line
+            "id": i,
+            "text": line,
+            "label": label_line(line),              # calling our own function inside another
+            "payload": {                            # a dict nested inside a dict
+                "source": source,
+                "length": len(line)
+            }
+        }
+        records.append(record)
+
+    return records
+
+
+def count_labels(records):
+    """Count how many records carry each label."""
+    counts = {}                                     # empty dict to tally into
+
+    for record in records:
+        label = record["label"]                     # dig the label out of the record
+        counts[label] = counts.get(label, 0) + 1    # old count (or 0), plus one, stored back
+
+    return counts
+
+
 path = r"C:\pyth\minirag\DATA\true_data\parallel_work_queue.txt"
 
-with open(path, "r",encoding="utf-8") as f:
-    raw_text = f.read()
+text = read_document(path)                          # step 1: get the text
+lines = filter_lines(text)                          # step 2: clean it
+records = build_records(lines, "parallel_work_queue.txt")   # step 3: structure it
+counts = count_labels(records)                      # step 4: summarise it
 
-print(f"characters: {len(raw_text)}")
+print(f"lines kept: {len(lines)}")
+print(f"records: {len(records)}")
 
-lines = raw_text.splitlines()
-print(f"Lines : {len(lines)}")
-print("----Formtting----")
-
-kept = []
-skipped_blank = 0
-skipped_short = 0
-
-for line in lines:
-    clean = line.strip()
-
-    if clean == "":
-        skipped_blank = skipped_blank + 1
-        continue
-
-    if len(clean) < 15:
-        skipped_short = skipped_short + 1
-        continue
-
-    kept.append(clean)
-
-print(f"kept: {len(kept)}")
-print(f"skipped blank: {skipped_blank}")
-print(f"skipped short: {skipped_short}")
-
-print("----Labelling----")
-
-records = []
-counts = {}
-
-for i, line in enumerate(kept):
-    lower = line.lower()
-
-    if "fail" in lower or "error" in lower:
-        label = "PROBLEM"
-    elif "queue" in lower or "worker" in lower:
-        label = "QUEUE"
-    elif line.endswith(":"):
-        label = "HEADING"
-    else:
-        label = "TEXT"
-
-    record = {
-        "id" : i,
-        "label" : label,
-        "text":line,
-        "payload":{
-            "source": "parallel_work_queue.txt",
-            "source_type": "true",
-            "length": len(line) 
-        }
-    }
-
-    records.append(record)
-    counts[label] = counts.get(label, 0) + 1
-
-print(f"records built: {len(records)}")
-
-print("--- counts ---")
-for label, n in counts.items():
-    print(f"{label}: {n}")
-
-print("--- first record ---")
-first = records[0]
-print(first)
-print(first["id"])
-print(first["text"])
-print(first["payload"]["source"])
-
-print("--- problems only ---")
-for record in records:
-    if record["label"] == "PROBLEM":
-        print(record["id"], record["text"][:60])
-
-"""
-Longest problem. Loop through records and 
-find the PROBLEM record with the longest text. Print its id and text.
-
-"""
-longest_problem = None
-
-for record in records:
-    if record["label"] == "PROBLEM":
-        if longest_problem is None or len(record["text"]) > len(longest_problem["text"]):
-            longest_problem = record
-
-print("--- longest problem ---")
-print(longest_problem["id"])
-print(longest_problem["text"])
-
-"""
-Sort the counts. Print the label counts from most common to least. 
-Hint: sorted(counts.items(), key=lambda pair: pair[1], reverse=True) — 
-you won't fully understand lambda yet, that's fine, just use it and note it in PATTERNS.md.
-
-"""
-
-print("--- sorted counts ---")
-
-sorted_counts = sorted(
-    counts.items(),
-    key=lambda pair: pair[1],
-    reverse=True
-)
-
-for label, n in sorted_counts:
+for label, n in counts.items():                     # .items() gives key and value together
     print(f"{label}: {n}")
