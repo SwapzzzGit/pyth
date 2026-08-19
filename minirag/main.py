@@ -69,6 +69,7 @@ for label, n in counts.items():
 
 print("--- first record ---")
 first = records[0]
+print(first)
 print(first["id"])
 print(first["text"])
 print(first["payload"]["source"])
@@ -77,3 +78,37 @@ print("--- problems only ---")
 for record in records:
     if record["label"] == "PROBLEM":
         print(record["id"], record["text"][:60])
+
+"""
+Longest problem. Loop through records and 
+find the PROBLEM record with the longest text. Print its id and text.
+
+"""
+longest_problem = None
+
+for record in records:
+    if record["label"] == "PROBLEM":
+        if longest_problem is None or len(record["text"]) > len(longest_problem["text"]):
+            longest_problem = record
+
+print("--- longest problem ---")
+print(longest_problem["id"])
+print(longest_problem["text"])
+
+"""
+Sort the counts. Print the label counts from most common to least. 
+Hint: sorted(counts.items(), key=lambda pair: pair[1], reverse=True) — 
+you won't fully understand lambda yet, that's fine, just use it and note it in PATTERNS.md.
+
+"""
+
+print("--- sorted counts ---")
+
+sorted_counts = sorted(
+    counts.items(),
+    key=lambda pair: pair[1],
+    reverse=True
+)
+
+for label, n in sorted_counts:
+    print(f"{label}: {n}")
