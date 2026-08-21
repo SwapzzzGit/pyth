@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 .env
 processed_data/
+*.egg-info/
