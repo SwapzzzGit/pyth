@@ -1,0 +1,6 @@
+
+python-dotenv #FOr loading configurations from env files.
+
+ruff # python linter and code formatter
+
+logfire #observability
